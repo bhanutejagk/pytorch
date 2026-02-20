@@ -94,12 +94,14 @@ remove_archs() {
 
 # Function to filter CUDA architectures for aarch64
 # aarch64 ARM GPUs only support certain compute capabilities
-# Keep: 8.0 (A100), 9.0+ (Hopper, Grace Hopper, newer)
-# Remove: < 8.0 (no ARM GPUs), 8.6 (x86_64 RTX 3090/A6000 only)
+# Keep: 7.5 (T4 for Graviton instances), 8.0 (A100), 9.0+ (Hopper, Grace Hopper, newer)
+# Remove: < 7.5 (no ARM GPUs), 8.6 (x86_64 RTX 3090/A6000 only)
+# NOTE: AWS Graviton instances with T4 GPUs require SM 7.5 support
 filter_aarch64_archs() {
     local arch_list="$1"
     # Explicitly remove architectures not needed on aarch64
-    arch_list=$(remove_archs "$arch_list" "5.0" "6.0" "7.0" "7.5" "8.6")
+    # Keep 7.5 for AWS Graviton + T4 GPU support
+    arch_list=$(remove_archs "$arch_list" "5.0" "6.0" "7.0" "8.6")
     echo "$arch_list"
 }
 
@@ -122,7 +124,7 @@ case ${CUDA_VERSION} in
     *) echo "unknown cuda version $CUDA_VERSION"; exit 1 ;;
 esac
 
-# Filter for aarch64: Remove < 8.0 and 8.6
+# Filter for aarch64: Remove < 7.5 and 8.6 (keep 7.5 for AWS Graviton + T4 GPU support)
 [[ "$ARCH" == "aarch64" ]] && TORCH_CUDA_ARCH_LIST=$(filter_aarch64_archs "$TORCH_CUDA_ARCH_LIST")
 
 echo "TORCH_CUDA_ARCH_LIST set to: $TORCH_CUDA_ARCH_LIST"
